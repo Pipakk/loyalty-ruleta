@@ -43,16 +43,16 @@ function cfgFromLegacy(bar: BusinessRow): Partial<BusinessConfig> {
       theme: {},
     },
     stamps: {
-      goal: Number.isFinite(bar.stamp_goal as any) ? Number(bar.stamp_goal) : undefined,
-      daily_limit: Number.isFinite(bar.stamp_daily_limit as any) ? Number(bar.stamp_daily_limit) : undefined,
+      goal: Number.isFinite(bar.stamp_goal as number) ? Number(bar.stamp_goal) : 8,
+      daily_limit: Number.isFinite(bar.stamp_daily_limit as number) ? Number(bar.stamp_daily_limit) : 1,
       reward_title: bar.reward_title ?? undefined,
     },
     rewards: {
-      expires_days: Number.isFinite(bar.reward_expires_days as any) ? Number(bar.reward_expires_days) : undefined,
+      expires_days: Number.isFinite(bar.reward_expires_days as number) ? Number(bar.reward_expires_days) : 30,
     },
     wheel: {
-      enabled: typeof bar.wheel_enabled === "boolean" ? bar.wheel_enabled : undefined,
-      cooldown_days: Number.isFinite(bar.wheel_cooldown_days as any) ? Number(bar.wheel_cooldown_days) : undefined,
+      enabled: typeof bar.wheel_enabled === "boolean" ? bar.wheel_enabled : true,
+      cooldown_days: Number.isFinite(bar.wheel_cooldown_days as number) ? Number(bar.wheel_cooldown_days) : 7,
     },
   };
 }
