@@ -171,6 +171,11 @@ export const BusinessConfigSchema = z
             rewards_title: z.string().min(1).default("Premios activos"),
             rewards_empty: z.string().min(1).default("Aún no tienes premios activos."),
             rewards_expires_at: z.string().min(1).default("Caduca:"),
+            rewards_ready: z.string().min(1).default("Listo para usar"),
+            stamps_completed_message: z
+              .string()
+              .min(1)
+              .default("¡Objetivo completado! Tienes un nuevo premio para canjear."),
             redeem: z.string().min(1).default("Canjear (staff)"),
             tip: z.string().min(1).default("Consejo: guarda esta página en tu pantalla de inicio para abrirla como app."),
             cta_wheel: z.string().min(1).default("🎡 Ruleta"),
