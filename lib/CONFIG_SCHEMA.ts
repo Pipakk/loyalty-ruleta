@@ -68,7 +68,7 @@ export const BusinessConfigSchema = z
         login: z.boolean().default(true),
         admin: z.boolean().default(true),
       })
-      .default({}),
+      .default({ wheel: true, stamps: true, wallet: true, login: true, admin: true }),
 
     stamps: z
       .object({
