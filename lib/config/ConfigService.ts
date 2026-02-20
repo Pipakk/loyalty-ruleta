@@ -40,6 +40,7 @@ function cfgFromLegacy(bar: BusinessRow): Partial<BusinessConfig> {
     branding: {
       name: bar.name,
       logo_url: bar.logo_url ?? undefined,
+      theme: {},
     },
     stamps: {
       goal: Number.isFinite(bar.stamp_goal as any) ? Number(bar.stamp_goal) : undefined,
