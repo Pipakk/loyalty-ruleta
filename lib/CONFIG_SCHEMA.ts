@@ -76,13 +76,13 @@ export const BusinessConfigSchema = z
         daily_limit: z.number().int().nonnegative().default(1),
         reward_title: z.string().min(1).optional(),
       })
-      .default({}),
+      .default({ goal: 8, daily_limit: 1 }),
 
     rewards: z
       .object({
         expires_days: z.number().int().positive().default(30),
       })
-      .default({}),
+      .default({ expires_days: 30 }),
 
     wheel: z
       .object({
@@ -103,7 +103,17 @@ export const BusinessConfigSchema = z
           })
           .default({}),
       })
-      .default({}),
+      .default({
+        enabled: true,
+        cooldown_days: 7,
+        segments: [
+          { id: "stamp_1", label: "1 sello extra", type: "stamp", value: 1, weight: 3, enabled: true },
+          { id: "none_1", label: "Sigue jugando", type: "none", weight: 6, enabled: true },
+          { id: "reward_1", label: "5% dto próxima visita", type: "reward", weight: 2, enabled: true },
+          { id: "reward_2", label: "Tapa gratis", type: "reward", weight: 1, enabled: true },
+        ],
+        ui: {},
+      }),
 
     texts: z
       .object({
