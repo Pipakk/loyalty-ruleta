@@ -3,10 +3,8 @@
 import type { StampProps } from "../../base/types";
 import { barberPalette } from "../palette";
 
-const SCISSORS_IMG = "/themes/barber/scissors.png";
-
 /**
- * Barbería: sello conseguido = círculo con icono de tijeras dentro.
+ * Barbería: sello conseguido = círculo con emoji de tijeras dentro.
  * Sello no conseguido = punto negro pequeño para que se vea.
  */
 export function BarberStamp({ filled }: StampProps) {
@@ -50,13 +48,7 @@ export function BarberStamp({ filled }: StampProps) {
       }}
       title="Sello conseguido"
     >
-      <img
-        src={SCISSORS_IMG}
-        alt=""
-        width={16}
-        height={16}
-        style={{ objectFit: "contain" }}
-      />
+      <span style={{ fontSize: 16, lineHeight: 1 }} aria-hidden>✂️</span>
     </div>
   );
 }

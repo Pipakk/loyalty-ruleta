@@ -36,7 +36,7 @@
     "enabled": true,
     "cooldown_days": 0,
     "ui": {
-      "segment_colors": ["#c9a227", "#2d2d2d", "#c9a227", "#2d2d2d", "#8b7355"]
+      "segment_colors": ["#8B1E1E", "#1C2E4A", "#FDFCF9", "#8B1E1E", "#1C2E4A", "#FDFCF9"]
     },
     "segments": [
       { "id": "stamp_1", "enabled": true, "label": "1 sello extra", "type": "stamp", "value": 1, "weight": 3 },
