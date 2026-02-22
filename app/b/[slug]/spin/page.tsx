@@ -181,7 +181,7 @@ export default function SpinPage() {
     const customerId = auth.user?.id;
 
     if (!customerId) {
-      alert(cfg?.texts?.wheel?.need_login ?? "Inicia sesión para girar");
+      alert(cfg?.texts?.wheel?.need_login ?? "Inicia sesión con tu cuenta para poder girar la ruleta.");
       setSpinning(false);
       router.push(`/b/${slug}/login`);
       return;
@@ -196,7 +196,7 @@ export default function SpinPage() {
     const data = (await res.json()) as SpinResponse;
 
     if (!res.ok) {
-      alert((data.error || cfg?.texts?.common?.error_generic) ?? "Error");
+      alert(data.error || (cfg?.texts?.common?.error_generic ?? "No se pudo registrar la tirada. Inténtalo de nuevo."));
       setSpinning(false);
       return;
     }

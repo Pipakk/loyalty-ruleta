@@ -42,7 +42,13 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signUp({ email, password });
       setLoading(false);
       if (error) {
-        alert(error.message);
+        const msg =
+          error.message?.includes("already registered") || error.message?.includes("already been registered")
+            ? "Este correo ya está registrado. Entra con tu contraseña o usa «¿Olvidaste la contraseña?» en Supabase."
+            : error.message?.includes("Invalid login")
+              ? "Email o contraseña incorrectos. Comprueba los datos e inténtalo de nuevo."
+              : error.message || "No se pudo crear la cuenta. Inténtalo de nuevo.";
+        alert(msg);
         return;
       }
       if (data.user?.id) {
@@ -55,7 +61,11 @@ export default function LoginPage() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      alert(error.message);
+      const msg =
+        error.message?.includes("Invalid login") || error.message?.includes("invalid")
+          ? "Email o contraseña incorrectos. Comprueba los datos e inténtalo de nuevo."
+          : error.message || "No se pudo iniciar sesión. Inténtalo de nuevo.";
+      alert(msg);
       return;
     }
     if (data.user?.id) {

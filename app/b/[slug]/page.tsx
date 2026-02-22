@@ -15,7 +15,7 @@ export default function BarLanding() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
-  const { data: cfgData, loading: cfgLoading } = useBusinessConfig(slug);
+  const { data: cfgData, loading: cfgLoading, error: configError } = useBusinessConfig(slug);
   const cfg = cfgData?.config;
   const business = cfgData?.business;
 
@@ -32,6 +32,28 @@ export default function BarLanding() {
   const t = theme.tokens;
 
   if (loading || cfgLoading || !cfg) {
+    if (configError && !cfgLoading) {
+      return (
+        <main
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 16,
+            background: c.background,
+            color: c.text,
+            fontFamily: t.font.sans,
+            padding: 24,
+          }}
+        >
+          <p style={{ fontSize: 16, color: c.text, textAlign: "center" }}>No encontramos este establecimiento.</p>
+          <p style={{ fontSize: 14, color: c.secondary, textAlign: "center" }}>Comprueba la dirección o vuelve al inicio.</p>
+          <Button onClick={() => router.push("/")}>Volver al inicio</Button>
+        </main>
+      );
+    }
     return (
       <main
         style={{
@@ -55,14 +77,23 @@ export default function BarLanding() {
         style={{
           minHeight: "100vh",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          gap: 16,
           background: c.background,
           color: c.text,
           fontFamily: t.font.sans,
+          padding: 24,
         }}
       >
-        <span style={{ fontSize: 15, color: c.secondary }}>{cfg.texts?.landing?.error_not_found ?? "Negocio no encontrado."}</span>
+        <p style={{ fontSize: 16, color: c.text, textAlign: "center" }}>
+          {cfg.texts?.landing?.error_not_found ?? "No encontramos este establecimiento."}
+        </p>
+        <p style={{ fontSize: 14, color: c.secondary, textAlign: "center" }}>
+          Comprueba la dirección o vuelve al inicio para elegir otro.
+        </p>
+        <Button onClick={() => router.push("/")}>Volver al inicio</Button>
       </main>
     );
   }

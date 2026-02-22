@@ -2,13 +2,15 @@ import { createStampToken } from "@/lib/stampToken";
 import { ConfigService } from "@/lib/config/ConfigService";
 import { StampQRClient } from "./StampQRClient";
 
+/**
+ * URL base para el enlace del QR. En Vercel con dominio propio debes definir
+ * NEXT_PUBLIC_APP_URL (ej. https://fidelidad-digital.vercel.app) para que el QR
+ * apunte a tu dominio y no a *.vercel.app.
+ */
 function getBaseUrl(): string {
-  if (typeof process.env.NEXT_PUBLIC_APP_URL === "string" && process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
-  }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
+  const fromEnv = typeof process.env.NEXT_PUBLIC_APP_URL === "string" && process.env.NEXT_PUBLIC_APP_URL.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return "https://fidelidad-digital.vercel.app";
 }
 
@@ -19,7 +21,7 @@ export default async function StampQRPage({ params }: { params: { slug: string }
   if (!bar) {
     return (
       <main style={{ padding: 24, textAlign: "center" }}>
-        <p>Negocio no encontrado.</p>
+        <p>No encontramos este establecimiento. Comprueba la dirección.</p>
       </main>
     );
   }

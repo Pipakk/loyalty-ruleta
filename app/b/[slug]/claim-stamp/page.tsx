@@ -22,7 +22,7 @@ export default function ClaimStampPage() {
   useEffect(() => {
     if (!token || !slug) {
       setStatus("error");
-      setMessage("Enlace inválido.");
+      setMessage("Falta el código del QR o la dirección es incorrecta. Escanea de nuevo el QR del establecimiento.");
       return;
     }
 
@@ -33,7 +33,7 @@ export default function ClaimStampPage() {
 
       if (!customerId) {
         setStatus("need_login");
-        setMessage("Inicia sesión para añadir el sello.");
+        setMessage("Tienes que iniciar sesión con tu cuenta para que se añada el sello a tu wallet.");
         return;
       }
 
@@ -49,7 +49,11 @@ export default function ClaimStampPage() {
         setMessage("¡Sello añadido!");
       } else {
         setStatus("error");
-        setMessage(data.error === "invalid_token" ? "Código no válido o caducado." : (data.error || "Error al añadir el sello."));
+        setMessage(
+          data.error === "invalid_token"
+            ? "Este código QR no es válido o ha caducado. Usa el QR actual del establecimiento."
+            : (data.error || "No se pudo añadir el sello. Inténtalo de nuevo más tarde.")
+        );
       }
     })();
   }, [token, slug]);

@@ -23,49 +23,7 @@ export default async function BarLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { business } = await ConfigService.getConfig(slug);
-
-  if (!business) {
-    return (
-      <main
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: theme.color.ivory,
-          color: theme.color.text,
-          fontFamily: theme.font.sans,
-          padding: theme.space.lg,
-        }}
-      >
-        <div style={{ textAlign: "center", maxWidth: 360 }}>
-          <p style={{ fontSize: 18, fontWeight: theme.font.weight.medium, color: theme.color.text, marginBottom: theme.space.xs }}>
-            Negocio no encontrado
-          </p>
-          <p style={{ fontSize: 14, color: theme.color.camelDark }}>
-            La dirección no corresponde a un establecimiento válido.
-          </p>
-          <a
-            href="/"
-            style={{
-              display: "inline-block",
-              marginTop: theme.space.lg,
-              padding: theme.space.sm,
-              borderRadius: theme.radius,
-              border: `1px solid ${theme.color.camel}`,
-              color: theme.color.camelDark,
-              textDecoration: "none",
-              fontSize: 14,
-              fontWeight: theme.font.weight.medium,
-            }}
-          >
-            Volver al inicio
-          </a>
-        </div>
-      </main>
-    );
-  }
-
+  // Siempre renderizar hijos: la carga del negocio se hace también en cliente (useBusinessConfig).
+  // Así evitamos mostrar "Negocio no encontrado" por fallos puntuales de red o caché en el servidor.
   return <BarThemeWrapper slug={slug}>{children}</BarThemeWrapper>;
 }

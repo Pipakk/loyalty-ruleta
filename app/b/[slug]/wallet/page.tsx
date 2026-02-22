@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseClient";
 import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
@@ -69,12 +69,17 @@ export default function WalletPage() {
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [membership, setMembership] = useState<Membership | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
+  const [rewardsRedeemed, setRewardsRedeemed] = useState<Reward[]>([]);
+  const [redeemQRRewardId, setRedeemQRRewardId] = useState<string | null>(null);
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const claimByQRInProgressRef = useRef(false);
+  const [lastQRClaimAt, setLastQRClaimAt] = useState<number>(0);
+  const [qrCooldownLeft, setQrCooldownLeft] = useState(0);
 
-  const { data: cfgData, loading: cfgLoading } = useBusinessConfig(slug);
+  const { data: cfgData, loading: cfgLoading, error: configError } = useBusinessConfig(slug);
   const cfg = cfgData?.config;
   const business = cfgData?.business;
 
@@ -107,7 +112,7 @@ export default function WalletPage() {
         }
       );
 
-      const { data: r } = await supabase
+      const { data: rActive } = await supabase
         .from("rewards")
         .select("id,title,source,status,expires_at,created_at")
         .eq("bar_id", cfgData.business.id)
@@ -115,7 +120,16 @@ export default function WalletPage() {
         .eq("status", "active")
         .order("expires_at", { ascending: true });
 
-      setRewards((r as Reward[]) || []);
+      const { data: rRedeemed } = await supabase
+        .from("rewards")
+        .select("id,title,source,status,expires_at,created_at")
+        .eq("bar_id", cfgData.business.id)
+        .eq("customer_id", uid)
+        .eq("status", "redeemed")
+        .order("created_at", { ascending: false });
+
+      setRewards((rActive as Reward[]) || []);
+      setRewardsRedeemed((rRedeemed as Reward[]) || []);
       setLoading(false);
     })();
   }, [slug, cfgData?.business?.id, cfg]);
@@ -140,7 +154,7 @@ export default function WalletPage() {
       }
     );
 
-    const { data: r } = await supabase
+    const { data: rActive } = await supabase
       .from("rewards")
       .select("id,title,source,status,expires_at,created_at")
       .eq("bar_id", business.id)
@@ -148,7 +162,16 @@ export default function WalletPage() {
       .eq("status", "active")
       .order("expires_at", { ascending: true });
 
-    setRewards((r as Reward[]) || []);
+    const { data: rRedeemed } = await supabase
+      .from("rewards")
+      .select("id,title,source,status,expires_at,created_at")
+      .eq("bar_id", business.id)
+      .eq("customer_id", customerId)
+      .eq("status", "redeemed")
+      .order("created_at", { ascending: false });
+
+    setRewards((rActive as Reward[]) || []);
+    setRewardsRedeemed((rRedeemed as Reward[]) || []);
   }
 
   async function addStamp() {
@@ -158,7 +181,7 @@ export default function WalletPage() {
       return;
     }
     if (!pin.trim()) {
-      alert(cfg.texts?.wallet?.pin_missing_add_stamp ?? "Introduce el PIN");
+      alert(cfg.texts?.wallet?.pin_missing_add_stamp ?? "Introduce el PIN del establecimiento para añadir un sello.");
       return;
     }
 
@@ -172,7 +195,7 @@ export default function WalletPage() {
     setBusy(false);
 
     if (!res.ok) {
-      alert((data.error || cfg.texts?.common?.error_generic) ?? "Error");
+      alert(data.error || (cfg.texts?.common?.error_generic ?? "No se pudo añadir el sello. Comprueba el PIN e inténtalo de nuevo."));
       return;
     }
     setPin("");
@@ -184,24 +207,48 @@ export default function WalletPage() {
 
   async function claimStampByQR(token: string) {
     if (!customerId || !cfg) return;
+    if (claimByQRInProgressRef.current) return;
+    claimByQRInProgressRef.current = true;
     setBusy(true);
-    const res = await fetch("/api/stamp/claim", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, customerId }),
-    });
-    const data = await res.json();
-    setBusy(false);
-    setShowQRScanner(false);
-    if (!res.ok) {
-      alert(data.error === "invalid_token" ? "Código no válido o caducado." : (data.error || (cfg.texts?.common?.error_generic ?? "Error")));
+    try {
+      const res = await fetch("/api/stamp/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, customerId }),
+      });
+      const data = await res.json();
+      setShowQRScanner(false);
+if (!res.ok) {
+      const msg = data.error === "invalid_token"
+        ? "Este código QR no es válido o ha caducado. Usa el QR actual del establecimiento."
+        : (data.error || (cfg.texts?.common?.error_generic ?? "No se pudo añadir el sello. Inténtalo de nuevo."));
+      alert(msg);
       return;
     }
-    await refresh();
-    if (data.createdReward) {
-      alert(cfg?.texts?.wallet?.stamps_completed_message ?? "¡Objetivo completado! Tienes un nuevo premio para canjear.");
+      setLastQRClaimAt(Date.now());
+      await refresh();
+      if (data.createdReward) {
+        alert(cfg?.texts?.wallet?.stamps_completed_message ?? "¡Objetivo completado! Tienes un nuevo premio para canjear.");
+      }
+    } finally {
+      setBusy(false);
+      claimByQRInProgressRef.current = false;
     }
   }
+
+  // Cooldown de 10 s entre escaneos de sello por QR
+  useEffect(() => {
+    if (lastQRClaimAt <= 0) return;
+    const COOLDOWN_SEC = 10;
+    setQrCooldownLeft(COOLDOWN_SEC);
+    const t = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - lastQRClaimAt) / 1000);
+      const left = Math.max(0, COOLDOWN_SEC - elapsed);
+      setQrCooldownLeft(left);
+      if (left <= 0) clearInterval(t);
+    }, 500);
+    return () => clearInterval(t);
+  }, [lastQRClaimAt]);
 
   async function redeemReward(rewardId: string) {
     if (!business || !cfg) return;
@@ -210,7 +257,7 @@ export default function WalletPage() {
       return;
     }
     if (!pin.trim()) {
-      alert(cfg.texts?.wallet?.pin_missing_redeem ?? "Introduce el PIN");
+      alert(cfg.texts?.wallet?.pin_missing_redeem ?? "Introduce el PIN del establecimiento para canjear el premio.");
       return;
     }
 
@@ -224,11 +271,37 @@ export default function WalletPage() {
     setBusy(false);
 
     if (!res.ok) {
-      alert((data.error || cfg.texts?.common?.error_generic) ?? "Error");
+      alert(data.error || (cfg.texts?.common?.error_generic ?? "No se pudo canjear el premio. Comprueba el PIN e inténtalo de nuevo."));
       return;
     }
     setPin("");
     await refresh();
+  }
+
+  async function redeemByQR(token: string, rewardId: string) {
+    if (!customerId || !cfg) return;
+    if (busy) return;
+    setBusy(true);
+    setRedeemQRRewardId(null);
+    try {
+      const res = await fetch("/api/redeem/by-qr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, customerId, rewardId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(
+          data.error === "invalid_token"
+            ? "Este código QR no es válido o ha caducado. Usa el QR del establecimiento."
+            : (data.error || (cfg.texts?.common?.error_generic ?? "No se pudo canjear el premio. Inténtalo de nuevo."))
+        );
+        return;
+      }
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
   }
 
   const theme = useTheme();
@@ -245,6 +318,25 @@ export default function WalletPage() {
     router.replace(`/b/${slug}/login`);
     return null;
   }
+
+  // Negocio no encontrado (404 o sin datos): mensaje claro y enlace a inicio
+  if (!cfgLoading && (configError || (cfgData && !cfgData.business))) {
+    return (
+      <main style={{ minHeight: "100vh", padding: 24, display: "flex", alignItems: "center", justifyContent: "center", background: c.background, fontFamily: t.font.sans }}>
+        <div style={{ textAlign: "center", maxWidth: 360 }}>
+          <p style={{ fontSize: 18, fontWeight: t.font.weight.medium, color: c.text, marginBottom: 8 }}>
+            No encontramos este establecimiento
+          </p>
+          <p style={{ fontSize: 14, color: c.secondary, marginBottom: 24 }}>
+            Comprueba que la dirección sea correcta o vuelve al inicio para elegir otro.
+          </p>
+          <Button onClick={() => router.push("/")}>Volver al inicio</Button>
+        </div>
+      </main>
+    );
+  }
+
+  const qrScanDisabled = busy || !customerId || qrCooldownLeft > 0;
 
   return (
     <main
@@ -345,9 +437,11 @@ export default function WalletPage() {
             <Button
               variant="secondary"
               onClick={() => setShowQRScanner(true)}
-              disabled={busy || !customerId}
+              disabled={qrScanDisabled}
             >
-              Escanea para añadir sello
+              {qrCooldownLeft > 0
+                ? `Espera ${qrCooldownLeft} s para escanear de nuevo`
+                : "Escanea para añadir sello"}
             </Button>
           </div>
           {showQRScanner && (
@@ -357,12 +451,6 @@ export default function WalletPage() {
               onClose={() => setShowQRScanner(false)}
             />
           )}
-          <p style={{ fontSize: 12, color: c.secondary, marginTop: t.space.sm }}>
-            ¿Tienes un QR del establecimiento?{" "}
-            <a href={`/b/${slug}/stamp-qr`} target="_blank" rel="noopener noreferrer" style={{ color: c.primary }}>
-              Ver QR para imprimir
-            </a>
-          </p>
         </Card>
 
         {/* Premios activos */}
@@ -421,15 +509,79 @@ export default function WalletPage() {
                     <div style={{ fontSize: 12, color: c.secondary, marginTop: 4 }}>
                       {cfg?.texts?.wallet?.rewards_expires_at ?? "Caduca:"} {formatDate(r.expires_at)}
                     </div>
-                    <Button variant="secondary" onClick={() => redeemReward(r.id)} disabled={busy} style={{ marginTop: t.space.sm }}>
-                      {cfg?.texts?.wallet?.redeem ?? "Canjear (staff)"}
-                    </Button>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: t.space.xs, marginTop: t.space.sm }}>
+                      <Button variant="secondary" onClick={() => redeemReward(r.id)} disabled={busy}>
+                        {cfg?.texts?.wallet?.redeem ?? "Canjear (staff)"}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => setRedeemQRRewardId(r.id)}
+                        disabled={busy}
+                      >
+                        Escanear QR para canjear
+                      </Button>
+                    </div>
                   </div>
                 </li>
               ))}
             </ul>
           )}
+
+          {redeemQRRewardId && (
+            <StampQRScanner
+              isSameSlug={(s) => s === slug}
+              onScan={(token) => redeemByQR(token, redeemQRRewardId)}
+              onClose={() => setRedeemQRRewardId(null)}
+              title="Escanea el QR del establecimiento para canjear este premio"
+            />
+          )}
         </Card>
+
+        {/* Premios canjeados */}
+        {rewardsRedeemed.length > 0 && (
+          <Card style={{ marginTop: t.space.lg }}>
+            <div style={{ fontSize: 15, fontWeight: t.font.weight.medium, marginBottom: t.space.sm }}>
+              Premios canjeados
+            </div>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: t.space.sm }}>
+              {rewardsRedeemed.map((r) => (
+                <li
+                  key={r.id}
+                  style={{
+                    padding: t.space.md,
+                    borderRadius: t.radius,
+                    border: `1px solid ${c.border}`,
+                    background: c.surface,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: t.space.sm,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      background: c.background,
+                      border: `1px solid ${c.border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 20,
+                      flexShrink: 0,
+                    }}
+                  >
+                    ✓
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: t.font.weight.medium, fontSize: 14, color: c.text }}>1× {r.title}</div>
+                    <div style={{ fontSize: 12, color: c.secondary, marginTop: 2 }}>Canjeado</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
 
         <p style={{ marginTop: t.space.lg, fontSize: 12, color: c.secondary, textAlign: "center" }}>
           {cfg?.texts?.wallet?.tip ?? "Guarda esta página en tu pantalla de inicio para acceder como app."}

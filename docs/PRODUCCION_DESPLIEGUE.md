@@ -50,6 +50,8 @@ El **plan gratuito** de Supabase suele ser suficiente para empezar (500 MB DB, 2
 3. En **Environment Variables** añade:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - **`NEXT_PUBLIC_APP_URL`** = tu URL pública (ej. `https://fidelidad-digital.vercel.app`). Necesaria para que el QR de «añadir sello» abra tu dominio y no `*.vercel.app`.
+   - (Opcional) **`STAMP_QR_SECRET`**: si no la defines, el token del QR usa un valor por defecto. Si la defines en producción, **genera el QR solo desde la app desplegada** (abre `/b/[slug]/stamp-qr` en tu dominio y usa ese QR); no uses un QR generado en local.
 4. Deploy. Tu URL será `https://tu-proyecto.vercel.app`.
 
 **Dominio propio:** en el proyecto → Settings → Domains → añade tu dominio.
