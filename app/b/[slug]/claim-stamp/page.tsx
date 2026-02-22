@@ -63,7 +63,7 @@ export default function ClaimStampPage() {
             <>
               <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>✓ {message}</p>
               <Button onClick={() => router.push(`/b/${slug}/wallet`)}>
-                {cfg?.texts?.wallet?.cta_wallet ?? "Ir a Mi wallet"}
+                {cfg?.texts?.landing?.cta_wallet ?? "Ir a Mi wallet"}
               </Button>
             </>
           )}
