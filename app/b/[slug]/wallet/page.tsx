@@ -7,6 +7,7 @@ import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { StampQRScanner } from "@/components/StampQRScanner";
 import { useTheme } from "@/themes/ThemeContext";
 
 type Membership = {
@@ -71,6 +72,7 @@ export default function WalletPage() {
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   const { data: cfgData, loading: cfgLoading } = useBusinessConfig(slug);
   const cfg = cfgData?.config;
@@ -174,6 +176,27 @@ export default function WalletPage() {
       return;
     }
     setPin("");
+    await refresh();
+    if (data.createdReward) {
+      alert(cfg?.texts?.wallet?.stamps_completed_message ?? "¡Objetivo completado! Tienes un nuevo premio para canjear.");
+    }
+  }
+
+  async function claimStampByQR(token: string) {
+    if (!customerId || !cfg) return;
+    setBusy(true);
+    const res = await fetch("/api/stamp/claim", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, customerId }),
+    });
+    const data = await res.json();
+    setBusy(false);
+    setShowQRScanner(false);
+    if (!res.ok) {
+      alert(data.error === "invalid_token" ? "Código no válido o caducado." : (data.error || (cfg.texts?.common?.error_generic ?? "Error")));
+      return;
+    }
     await refresh();
     if (data.createdReward) {
       alert(cfg?.texts?.wallet?.stamps_completed_message ?? "¡Objetivo completado! Tienes un nuevo premio para canjear.");
@@ -315,9 +338,31 @@ export default function WalletPage() {
             onChange={(e) => setPin(e.target.value)}
             placeholder={cfg?.texts?.wallet?.pin_placeholder ?? "PIN"}
           />
-          <Button onClick={addStamp} disabled={busy} style={{ marginTop: t.space.xs }}>
-            {busy ? cfg?.texts?.wallet?.processing ?? "Procesando…" : cfg?.texts?.wallet?.add_stamp ?? "Añadir 1 sello"}
-          </Button>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: t.space.xs, marginTop: t.space.xs }}>
+            <Button onClick={addStamp} disabled={busy}>
+              {busy ? cfg?.texts?.wallet?.processing ?? "Procesando…" : cfg?.texts?.wallet?.add_stamp ?? "Añadir 1 sello"}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setShowQRScanner(true)}
+              disabled={busy || !customerId}
+            >
+              Escanea para añadir sello
+            </Button>
+          </div>
+          {showQRScanner && (
+            <StampQRScanner
+              isSameSlug={(s) => s === slug}
+              onScan={(token) => claimStampByQR(token)}
+              onClose={() => setShowQRScanner(false)}
+            />
+          )}
+          <p style={{ fontSize: 12, color: c.secondary, marginTop: t.space.sm }}>
+            ¿Tienes un QR del establecimiento?{" "}
+            <a href={`/b/${slug}/stamp-qr`} target="_blank" rel="noopener noreferrer" style={{ color: c.primary }}>
+              Ver QR para imprimir
+            </a>
+          </p>
         </Card>
 
         {/* Premios activos */}
