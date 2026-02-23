@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseClient";
 import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
@@ -16,6 +16,7 @@ export default function ClaimStampPage() {
 
   const [status, setStatus] = useState<"loading" | "success" | "error" | "need_login">("loading");
   const [message, setMessage] = useState<string>("");
+  const claimedOnceRef = useRef(false);
   const { data: cfgData } = useBusinessConfig(slug);
   const cfg = cfgData?.config;
 
@@ -25,6 +26,8 @@ export default function ClaimStampPage() {
       setMessage("Falta el código del QR o la dirección es incorrecta. Escanea de nuevo el QR del establecimiento.");
       return;
     }
+    if (claimedOnceRef.current) return;
+    claimedOnceRef.current = true;
 
     (async () => {
       const supabase = supabaseBrowser();

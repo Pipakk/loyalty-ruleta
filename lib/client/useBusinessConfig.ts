@@ -16,16 +16,27 @@ export function useBusinessConfig(slug: string) {
 
   useEffect(() => {
     let cancelled = false;
+    const fetchConfig = async () => {
+      const res = await fetch(`/api/business-config?slug=${encodeURIComponent(slug)}`, { cache: "no-store" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "Error");
+      return json as BusinessConfigResponse;
+    };
     (async () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/business-config?slug=${encodeURIComponent(slug)}`, { cache: "no-store" });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json?.error || "Error");
-        if (!cancelled) setData(json as BusinessConfigResponse);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message || "Error");
+        const json = await fetchConfig();
+        if (!cancelled) setData(json);
+      } catch (e: unknown) {
+        await new Promise((r) => setTimeout(r, 600));
+        if (cancelled) return;
+        try {
+          const json = await fetchConfig();
+          if (!cancelled) setData(json);
+        } catch (e2) {
+          if (!cancelled) setError(e2 instanceof Error ? e2.message : "Error");
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }

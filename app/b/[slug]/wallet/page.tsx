@@ -209,6 +209,7 @@ export default function WalletPage() {
     if (!customerId || !cfg) return;
     if (claimByQRInProgressRef.current) return;
     claimByQRInProgressRef.current = true;
+    setShowQRScanner(false);
     setBusy(true);
     try {
       const res = await fetch("/api/stamp/claim", {
@@ -217,14 +218,13 @@ export default function WalletPage() {
         body: JSON.stringify({ token, customerId }),
       });
       const data = await res.json();
-      setShowQRScanner(false);
-if (!res.ok) {
-      const msg = data.error === "invalid_token"
-        ? "Este código QR no es válido o ha caducado. Usa el QR actual del establecimiento."
-        : (data.error || (cfg.texts?.common?.error_generic ?? "No se pudo añadir el sello. Inténtalo de nuevo."));
-      alert(msg);
-      return;
-    }
+      if (!res.ok) {
+        const msg = data.error === "invalid_token"
+          ? "Este código QR no es válido o ha caducado. Usa el QR actual del establecimiento."
+          : (data.error || (cfg.texts?.common?.error_generic ?? "No se pudo añadir el sello. Inténtalo de nuevo."));
+        alert(msg);
+        return;
+      }
       setLastQRClaimAt(Date.now());
       await refresh();
       if (data.createdReward) {

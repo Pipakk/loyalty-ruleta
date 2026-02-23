@@ -64,7 +64,7 @@ function cfgFromLegacy(bar: BusinessRow): Partial<BusinessConfig> {
   };
 }
 
-async function fetchBusinessBySlug(slug: string): Promise<BusinessRow | null> {
+async function fetchBusinessBySlug(slug: string): Promise<BusinessRow> {
   const sb = supabaseServer();
   const { data, error } = await sb
     .from("bars")
@@ -74,28 +74,37 @@ async function fetchBusinessBySlug(slug: string): Promise<BusinessRow | null> {
     .eq("slug", slug)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (error) throw new Error("fetch_error");
+  if (!data) throw new Error("bar_not_found");
   return data as any;
 }
 
 const cachedFetchBusinessBySlug = unstable_cache(fetchBusinessBySlug, ["business-by-slug"], {
-  revalidate: 10, // config/theme changes picked up within 10s
+  revalidate: 10,
 });
 
 export const ConfigService = {
   /**
-   * Fetch bar/business by slug (server-side).
+   * Fetch bar/business by slug (server-side). Returns null when not found (no cache of null).
    */
   getBusinessBySlug: cache(async (slug: string) => {
-    return await cachedFetchBusinessBySlug(slug);
+    try {
+      return await cachedFetchBusinessBySlug(slug);
+    } catch {
+      return null;
+    }
   }),
 
   /**
    * Get validated config + safe defaults, multi-tenant by slug.
-   * Backward compatibility: legacy columns are mapped into cfg and overridden by cfg JSON.
    */
   getConfig: cache(async (slug: string) => {
-    const bar = await cachedFetchBusinessBySlug(slug);
+    let bar: BusinessRow | null;
+    try {
+      bar = await cachedFetchBusinessBySlug(slug);
+    } catch {
+      bar = null;
+    }
     if (!bar) {
       return {
         business: null as BusinessRow | null,
