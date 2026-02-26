@@ -25,7 +25,7 @@ export const WheelSegmentSchema = z.object({
 export type WheelSegment = z.infer<typeof WheelSegmentSchema>;
 
 /** Theme/business type key for dynamic layout and styling (cafe, bar, barber, gym, retail, etc.) */
-export const BusinessTypeSchema = z.enum(["cafe", "bar", "barber", "gym", "retail"]);
+export const BusinessTypeSchema = z.enum(["cafe", "bar", "barber", "gym", "retail", "esthetic"]);
 export type BusinessType = z.infer<typeof BusinessTypeSchema>;
 
 export const BusinessConfigSchema = z

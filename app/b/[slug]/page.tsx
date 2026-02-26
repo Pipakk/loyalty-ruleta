@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabaseClient";
 import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Card } from "@/components/ui/Card";
 import { useTheme } from "@/themes/ThemeContext";
 
 export default function BarLanding() {
@@ -14,6 +16,10 @@ export default function BarLanding() {
 
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"signup" | "login">("signup");
+  const [formLoading, setFormLoading] = useState(false);
 
   const { data: cfgData, loading: cfgLoading, error: configError } = useBusinessConfig(slug);
   const cfg = cfgData?.config;
@@ -27,9 +33,65 @@ export default function BarLanding() {
     })();
   }, [supabase]);
 
+  // Si ya está logueado, ir directo a la wallet (sin mostrar pestaña intermedia)
+  useEffect(() => {
+    if (!loading && !cfgLoading && userId && business) {
+      router.replace(`/b/${slug}/wallet`);
+    }
+  }, [loading, cfgLoading, userId, business, slug, router]);
+
   const theme = useTheme();
   const c = theme.color;
   const t = theme.tokens;
+
+  async function submit() {
+    if (!email || !password) {
+      alert(cfg?.texts?.login?.validation_missing ?? "Rellena email y contraseña");
+      return;
+    }
+    if (password.length < 6) {
+      alert(cfg?.texts?.login?.validation_password_len ?? "La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    setFormLoading(true);
+
+    if (mode === "signup") {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      setFormLoading(false);
+      if (error) {
+        const msg =
+          error.message?.includes("already registered") || error.message?.includes("already been registered")
+            ? "Este correo ya está registrado. Entra con tu contraseña."
+            : error.message?.includes("Invalid login")
+              ? "Email o contraseña incorrectos."
+              : error.message || "No se pudo crear la cuenta.";
+        alert(msg);
+        return;
+      }
+      if (data.user?.id) {
+        await supabase.from("customers").upsert({ id: data.user.id, phone: null });
+      }
+      router.push(`/b/${slug}/wallet`);
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    setFormLoading(false);
+    if (error) {
+      const msg =
+        error.message?.includes("Invalid login") || error.message?.includes("invalid")
+          ? "Email o contraseña incorrectos."
+          : error.message || "No se pudo iniciar sesión.";
+      alert(msg);
+      return;
+    }
+    if (data.user?.id) {
+      await supabase.from("customers").upsert({ id: data.user.id, phone: null });
+    }
+    setUserId(data.user?.id ?? null);
+    router.push(`/b/${slug}/wallet`);
+  }
 
   if (loading || cfgLoading || !cfg) {
     if (configError && !cfgLoading) {
@@ -49,7 +111,6 @@ export default function BarLanding() {
           }}
         >
           <p style={{ fontSize: 16, color: c.text, textAlign: "center" }}>No encontramos este establecimiento.</p>
-          <p style={{ fontSize: 14, color: c.secondary, textAlign: "center" }}>Comprueba la dirección o vuelve al inicio.</p>
           <Button onClick={() => router.push("/")}>Volver al inicio</Button>
         </main>
       );
@@ -66,7 +127,7 @@ export default function BarLanding() {
           fontFamily: t.font.sans,
         }}
       >
-        <span style={{ fontSize: 15, color: c.secondary }}>{cfg?.texts?.common?.loading ?? "Cargando…"}</span>
+        <span style={{ fontSize: 15, color: c.secondary }}>Cargando…</span>
       </main>
     );
   }
@@ -87,12 +148,7 @@ export default function BarLanding() {
           padding: 24,
         }}
       >
-        <p style={{ fontSize: 16, color: c.text, textAlign: "center" }}>
-          {cfg.texts?.landing?.error_not_found ?? "No encontramos este establecimiento."}
-        </p>
-        <p style={{ fontSize: 14, color: c.secondary, textAlign: "center" }}>
-          Comprueba la dirección o vuelve al inicio para elegir otro.
-        </p>
+        <p style={{ fontSize: 16, color: c.text, textAlign: "center" }}>No encontramos este establecimiento.</p>
         <Button onClick={() => router.push("/")}>Volver al inicio</Button>
       </main>
     );
@@ -100,7 +156,24 @@ export default function BarLanding() {
 
   const name = cfg.branding?.name || business.name;
   const logoUrl = cfg.branding?.logo_url || business.logo_url;
-  const wheelEnabled = Boolean(cfg.features?.wheel && cfg.wheel?.enabled);
+
+  // Si ya está logueado, no mostrar nada (el useEffect redirige a wallet)
+  if (userId) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: c.background,
+          fontFamily: t.font.sans,
+        }}
+      >
+        <span style={{ fontSize: 15, color: c.secondary }}>Cargando…</span>
+      </main>
+    );
+  }
 
   return (
     <main
@@ -116,8 +189,7 @@ export default function BarLanding() {
         fontFamily: t.font.sans,
       }}
     >
-      <div style={{ width: "min(420px, 100%)", textAlign: "center" }}>
-        {/* Logo centrado — estilo line-art como en mockup */}
+      <div style={{ width: "min(400px, 100%)", textAlign: "center" }}>
         <div
           style={{
             width: 88,
@@ -137,72 +209,88 @@ export default function BarLanding() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: c.secondary }}>
-              <path d="M10 40V20h6v2h2v-2h6v20h-2V24h-2v16h-2V24h-2v16H10z" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinejoin="round" />
-              <path d="M14 26h2v2h-2zM20 26h2v2h-2z" stroke="currentColor" strokeWidth="1" fill="none" />
-              <path d="M32 18c0-2.2 1.8-4 4-4s4 1.8 4 4v3H32v-3z" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M34 24v6h4v-6M36 26v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
+            <span style={{ fontSize: 32, color: c.secondary }}>—</span>
           )}
         </div>
 
-        <h1
-          style={{
-            fontSize: 28,
-            fontWeight: t.font.weight.semibold,
-            color: c.text,
-            marginBottom: t.space.xs,
-            lineHeight: 1.2,
-          }}
-        >
+        <h1 style={{ fontSize: 24, fontWeight: t.font.weight.semibold, color: c.text, marginBottom: t.space.xs }}>
           {name}
         </h1>
-        <p style={{ fontSize: 15, color: c.secondary, marginBottom: t.space.xl }}>
+        <p style={{ fontSize: 14, color: c.secondary, marginBottom: t.space.lg }}>
           {cfg.texts?.landing?.subtitle ?? "Programa de fidelización"}
         </p>
 
-        <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: t.space.sm, justifyContent: "center" }}>
-          {!userId ? (
-            <>
-              <Button variant="primaryDark" onClick={() => router.push(`/b/${slug}/login`)} style={{ flex: "1 1 140px", minWidth: 140 }}>
-                {cfg.texts?.landing?.cta_start ?? "Acceder"}
-              </Button>
-              <Button variant="secondary" onClick={() => router.push(`/b/${slug}/wallet`)} style={{ flex: "1 1 140px", minWidth: 140 }}>
-                {cfg.texts?.landing?.cta_premium ?? "Ver premios"}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="primaryDark" onClick={() => router.push(`/b/${slug}/wallet`)} style={{ flex: "1 1 140px", minWidth: 140 }}>
-                {cfg.texts?.landing?.cta_wallet ?? "Mi wallet"}
-              </Button>
-              {wheelEnabled && (
-                <Button variant="secondary" onClick={() => router.push(`/b/${slug}/spin`)} style={{ flex: "1 1 140px", minWidth: 140 }}>
-                  {cfg.texts?.landing?.cta_wheel ?? "Ruleta"}
-                </Button>
-              )}
-              <button
-                type="button"
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  setUserId(null);
-                }}
-                style={{
-                  width: "100%",
-                  padding: t.space.sm,
-                  background: "transparent",
-                  border: "none",
-                  color: c.secondary,
-                  fontSize: 13,
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                }}
-              >
-                {cfg.texts?.landing?.logout ?? "Cerrar sesión"}
-              </button>
-            </>
-          )}
-        </div>
+        <Card>
+          <div
+            style={{
+              display: "flex",
+              gap: t.space.xs,
+              marginBottom: t.space.md,
+              padding: 4,
+              borderRadius: 10,
+              background: c.background,
+              border: `1px solid ${c.border}`,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setMode("signup")}
+              style={{
+                flex: 1,
+                padding: t.space.sm,
+                borderRadius: 8,
+                border: "none",
+                cursor: "pointer",
+                fontWeight: t.font.weight.medium,
+                background: mode === "signup" ? c.white : "transparent",
+                color: mode === "signup" ? c.text : c.secondary,
+                boxShadow: mode === "signup" ? `0 1px 3px ${c.shadow}` : "none",
+              }}
+            >
+              Crear cuenta
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("login")}
+              style={{
+                flex: 1,
+                padding: t.space.sm,
+                borderRadius: 8,
+                border: "none",
+                cursor: "pointer",
+                fontWeight: t.font.weight.medium,
+                background: mode === "login" ? c.white : "transparent",
+                color: mode === "login" ? c.text : c.secondary,
+                boxShadow: mode === "login" ? `0 1px 3px ${c.shadow}` : "none",
+              }}
+            >
+              Entrar
+            </button>
+          </div>
+
+          <Input
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="tu@email.com"
+            autoComplete="email"
+          />
+          <Input
+            label="Contraseña"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="********"
+            autoComplete={mode === "signup" ? "new-password" : "current-password"}
+          />
+
+          <div style={{ marginTop: t.space.md }}>
+            <Button onClick={submit} disabled={formLoading}>
+              {formLoading ? "Procesando…" : mode === "signup" ? "Crear cuenta" : "Entrar"}
+            </Button>
+          </div>
+        </Card>
 
         <p style={{ marginTop: t.space.xl, fontSize: 11, color: c.secondary, lineHeight: 1.4 }}>
           {cfg.texts?.landing?.privacy_line_1}

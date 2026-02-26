@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fidelización digital · Sellos y QR sin app</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #faf8f5;
+      --text: #2c2825;
+      --text-soft: #5c554d;
+      --border: #e5e0d8;
+      --card: #fff;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(45, 42, 37, 0.06);
+      --blue: #1d4e6d;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+    header { text-align: center; margin-bottom: 2.5rem; }
+    h1 {
+      font-family: "DM Serif Display", serif;
+      font-size: clamp(1.75rem, 4vw, 2.25rem);
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    .subtitle { color: var(--text-soft); font-size: 1rem; margin-bottom: 2rem; }
+
+    .nav-cards {
+      display: grid;
+      gap: 1rem;
+    }
+    .nav-cards a {
+      display: block;
+      padding: 1.25rem 1.5rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.05rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .nav-cards a:hover {
+      border-color: var(--blue);
+      box-shadow: 0 6px 28px rgba(29, 78, 109, 0.12);
+    }
+    .nav-cards a span {
+      display: block;
+      font-weight: 400;
+      font-size: 0.9rem;
+      color: var(--text-soft);
+      margin-top: 0.25rem;
+    }
+    .btn-contact {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 0.9rem 1.75rem;
+      background: #25d366;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: 10px;
+      transition: opacity 0.2s;
+    }
+    .btn-contact:hover { opacity: 0.9; }
+    footer { margin-top: 2rem; text-align: center; font-size: 0.8rem; color: var(--text-soft); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Fidelización digital</h1>
+      <p class="subtitle">Sellos y premios con QR · Sin app para el cliente</p>
+    </header>
+
+    <nav class="nav-cards">
+      <a href="precios.html">Planes y precios<span>Desde 10€/mes · Básico, Profesional y Premium</span></a>
+      <a href="venta-barberias.html">Para barberías<span>Fideliza con sellos por visita y premios</span></a>
+      <a href="venta-estetica-manicura.html">Para estética y manicura<span>Centros de estética, uñas y tratamientos</span></a>
+      <a href="venta-floristerias.html">Para floristerías<span>Ramos, plantas y compras recurrentes</span></a>
+    </nav>
+
+    <p style="text-align: center; margin-top: 2rem;">
+      <a href="https://wa.me/34639577915" class="btn-contact" target="_blank" rel="noopener">Contacto (WhatsApp)</a>
+    </p>
+
+    <footer>
+      Un enlace para compartir con tus clientes · Navega por sectores y precios
+    </footer>
+  </div>
+</body>
+</html>

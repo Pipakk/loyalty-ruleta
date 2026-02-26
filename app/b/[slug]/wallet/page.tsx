@@ -6,7 +6,6 @@ import { supabaseBrowser } from "@/lib/supabaseClient";
 import { useBusinessConfig } from "@/lib/client/useBusinessConfig";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
 import { StampQRScanner } from "@/components/StampQRScanner";
 import { useTheme } from "@/themes/ThemeContext";
 
@@ -35,7 +34,6 @@ function formatDate(d: string) {
   }
 }
 
-/** Default stamp (cafe/bar): circle, filled = ☕, unfilled = dot */
 function DefaultStampDot({ filled }: { filled: boolean }) {
   const theme = useTheme();
   const c = theme.color;
@@ -70,14 +68,13 @@ export default function WalletPage() {
   const [membership, setMembership] = useState<Membership | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [rewardsRedeemed, setRewardsRedeemed] = useState<Reward[]>([]);
-  const [redeemQRRewardId, setRedeemQRRewardId] = useState<string | null>(null);
-  const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const claimByQRInProgressRef = useRef(false);
   const [lastQRClaimAt, setLastQRClaimAt] = useState<number>(0);
   const [qrCooldownLeft, setQrCooldownLeft] = useState(0);
+  const [redeemQRRewardId, setRedeemQRRewardId] = useState<string | null>(null);
 
   const { data: cfgData, loading: cfgLoading, error: configError } = useBusinessConfig(slug);
   const cfg = cfgData?.config;
@@ -174,37 +171,6 @@ export default function WalletPage() {
     setRewardsRedeemed((rRedeemed as Reward[]) || []);
   }
 
-  async function addStamp() {
-    if (!business || !cfg) return;
-    if (!customerId) {
-      router.push(`/b/${slug}/login`);
-      return;
-    }
-    if (!pin.trim()) {
-      alert(cfg.texts?.wallet?.pin_missing_add_stamp ?? "Introduce el PIN del establecimiento para añadir un sello.");
-      return;
-    }
-
-    setBusy(true);
-    const res = await fetch("/api/stamp/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ barSlug: slug, customerId, pin }),
-    });
-    const data = await res.json();
-    setBusy(false);
-
-    if (!res.ok) {
-      alert(data.error || (cfg.texts?.common?.error_generic ?? "No se pudo añadir el sello. Comprueba el PIN e inténtalo de nuevo."));
-      return;
-    }
-    setPin("");
-    await refresh();
-    if (data.createdReward) {
-      alert(cfg?.texts?.wallet?.stamps_completed_message ?? "¡Objetivo completado! Tienes un nuevo premio para canjear.");
-    }
-  }
-
   async function claimStampByQR(token: string) {
     if (!customerId || !cfg) return;
     if (claimByQRInProgressRef.current) return;
@@ -221,7 +187,7 @@ export default function WalletPage() {
       if (!res.ok) {
         const msg = data.error === "invalid_token"
           ? "Este código QR no es válido o ha caducado. Usa el QR actual del establecimiento."
-          : (data.error || (cfg.texts?.common?.error_generic ?? "No se pudo añadir el sello. Inténtalo de nuevo."));
+          : (data.error || "No se pudo añadir el sello. Inténtalo de nuevo.");
         alert(msg);
         return;
       }
@@ -234,48 +200,6 @@ export default function WalletPage() {
       setBusy(false);
       claimByQRInProgressRef.current = false;
     }
-  }
-
-  // Cooldown de 10 s entre escaneos de sello por QR
-  useEffect(() => {
-    if (lastQRClaimAt <= 0) return;
-    const COOLDOWN_SEC = 10;
-    setQrCooldownLeft(COOLDOWN_SEC);
-    const t = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - lastQRClaimAt) / 1000);
-      const left = Math.max(0, COOLDOWN_SEC - elapsed);
-      setQrCooldownLeft(left);
-      if (left <= 0) clearInterval(t);
-    }, 500);
-    return () => clearInterval(t);
-  }, [lastQRClaimAt]);
-
-  async function redeemReward(rewardId: string) {
-    if (!business || !cfg) return;
-    if (!customerId) {
-      router.push(`/b/${slug}/login`);
-      return;
-    }
-    if (!pin.trim()) {
-      alert(cfg.texts?.wallet?.pin_missing_redeem ?? "Introduce el PIN del establecimiento para canjear el premio.");
-      return;
-    }
-
-    setBusy(true);
-    const res = await fetch("/api/redeem", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ barSlug: slug, customerId, pin, rewardId }),
-    });
-    const data = await res.json();
-    setBusy(false);
-
-    if (!res.ok) {
-      alert(data.error || (cfg.texts?.common?.error_generic ?? "No se pudo canjear el premio. Comprueba el PIN e inténtalo de nuevo."));
-      return;
-    }
-    setPin("");
-    await refresh();
   }
 
   async function redeemByQR(token: string, rewardId: string) {
@@ -294,7 +218,7 @@ export default function WalletPage() {
         alert(
           data.error === "invalid_token"
             ? "Este código QR no es válido o ha caducado. Usa el QR del establecimiento."
-            : (data.error || (cfg.texts?.common?.error_generic ?? "No se pudo canjear el premio. Inténtalo de nuevo."))
+            : (data.error || "No se pudo canjear el premio. Inténtalo de nuevo.")
         );
         return;
       }
@@ -304,31 +228,39 @@ export default function WalletPage() {
     }
   }
 
+  useEffect(() => {
+    if (lastQRClaimAt <= 0) return;
+    const COOLDOWN_SEC = 10;
+    setQrCooldownLeft(COOLDOWN_SEC);
+    const t = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - lastQRClaimAt) / 1000);
+      const left = Math.max(0, COOLDOWN_SEC - elapsed);
+      setQrCooldownLeft(left);
+      if (left <= 0) clearInterval(t);
+    }, 500);
+    return () => clearInterval(t);
+  }, [lastQRClaimAt]);
+
   const theme = useTheme();
   const StampComponent = theme.components?.Stamp ?? DefaultStampDot;
   const stampsGoal = cfg?.stamps?.goal ?? 8;
   const stamps = membership?.stamps_count ?? 0;
-  const wheelEnabled = Boolean(cfg?.features?.wheel && cfg?.wheel?.enabled);
   const name = cfg?.branding?.name || business?.name || "Negocio";
   const logoUrl = cfg?.branding?.logo_url || business?.logo_url;
   const c = theme.color;
   const t = theme.tokens;
 
   if (!loading && !cfgLoading && !customerId) {
-    router.replace(`/b/${slug}/login`);
+    router.replace(`/b/${slug}`);
     return null;
   }
 
-  // Negocio no encontrado (404 o sin datos): mensaje claro y enlace a inicio
   if (!cfgLoading && (configError || (cfgData && !cfgData.business))) {
     return (
       <main style={{ minHeight: "100vh", padding: 24, display: "flex", alignItems: "center", justifyContent: "center", background: c.background, fontFamily: t.font.sans }}>
         <div style={{ textAlign: "center", maxWidth: 360 }}>
           <p style={{ fontSize: 18, fontWeight: t.font.weight.medium, color: c.text, marginBottom: 8 }}>
             No encontramos este establecimiento
-          </p>
-          <p style={{ fontSize: 14, color: c.secondary, marginBottom: 24 }}>
-            Comprueba que la dirección sea correcta o vuelve al inicio para elegir otro.
           </p>
           <Button onClick={() => router.push("/")}>Volver al inicio</Button>
         </div>
@@ -348,8 +280,7 @@ export default function WalletPage() {
         fontFamily: t.font.sans,
       }}
     >
-      <div style={{ maxWidth: 520, margin: "0 auto" }}>
-        {/* Header */}
+      <div style={{ maxWidth: 420, margin: "0 auto" }}>
         <div
           style={{
             display: "flex",
@@ -379,31 +310,28 @@ export default function WalletPage() {
             )}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, color: c.secondary }}>{cfg?.texts?.wallet?.title_kicker ?? "Tu wallet"}</div>
             <div style={{ fontWeight: t.font.weight.semibold, fontSize: 18 }}>{name}</div>
           </div>
-          <div style={{ display: "flex", gap: t.space.xs }}>
-            {wheelEnabled && (
-              <Button
-                style={{ width: "auto", padding: "10px 14px" }}
-                onClick={() => router.push(`/b/${slug}/spin`)}
-              >
-                {cfg?.texts?.wallet?.cta_wheel ?? "Ruleta"}
-              </Button>
-            )}
-            <Button variant="secondary" style={{ width: "auto", padding: "10px 14px" }} onClick={() => router.push(`/b/${slug}`)}>
-              Volver
-            </Button>
-          </div>
+          <Button
+            variant="secondary"
+            style={{ width: "auto", padding: "10px 14px" }}
+            onClick={async () => {
+              await supabase.auth.signOut();
+              router.push(`/b/${slug}`);
+            }}
+          >
+            Cerrar sesión
+          </Button>
         </div>
 
-        {/* Tarjeta de puntos */}
         <Card style={{ marginBottom: t.space.lg }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: t.space.sm }}>
             <span style={{ fontSize: 15, fontWeight: t.font.weight.medium }}>
               {cfg?.texts?.wallet?.section_stamps ?? "Tus sellos"}
             </span>
-            <span style={{ fontSize: 14, color: c.secondary }}>{stamps} / {stampsGoal}</span>
+            <span style={{ fontSize: 14, color: c.secondary }}>
+              {stamps} de {stampsGoal}
+            </span>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {Array.from({ length: stampsGoal }).map((_, i) => (
@@ -411,39 +339,20 @@ export default function WalletPage() {
             ))}
           </div>
           <p style={{ marginTop: t.space.sm, fontSize: 13, color: c.secondary }}>
-            {cfg?.texts?.wallet?.reward_for_completion ?? "Al completar:"}{" "}
-            <strong>{cfg?.stamps?.reward_title ?? "Premio"}</strong>
+            Te faltan <strong>{Math.max(0, stampsGoal - stamps)}</strong> para completar.
           </p>
         </Card>
 
-        {/* Acciones staff */}
         <Card style={{ marginBottom: t.space.lg }}>
-          <div style={{ fontSize: 15, fontWeight: t.font.weight.medium, marginBottom: 4 }}>
-            {cfg?.texts?.wallet?.staff_actions_title ?? "Acciones (staff)"}
-          </div>
-          <p style={{ fontSize: 13, color: c.secondary, marginBottom: t.space.sm }}>
-            {cfg?.texts?.wallet?.staff_actions_subtitle ??
-              "PIN del establecimiento para validar consumo o canjear premios."}
-          </p>
-          <Input
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
-            placeholder={cfg?.texts?.wallet?.pin_placeholder ?? "PIN"}
-          />
-          <div style={{ display: "flex", flexWrap: "wrap", gap: t.space.xs, marginTop: t.space.xs }}>
-            <Button onClick={addStamp} disabled={busy}>
-              {busy ? cfg?.texts?.wallet?.processing ?? "Procesando…" : cfg?.texts?.wallet?.add_stamp ?? "Añadir 1 sello"}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setShowQRScanner(true)}
-              disabled={qrScanDisabled}
-            >
-              {qrCooldownLeft > 0
-                ? `Espera ${qrCooldownLeft} s para escanear de nuevo`
-                : "Escanea para añadir sello"}
-            </Button>
-          </div>
+          <Button
+            onClick={() => setShowQRScanner(true)}
+            disabled={qrScanDisabled}
+            style={{ width: "100%" }}
+          >
+            {qrCooldownLeft > 0
+              ? `Espera ${qrCooldownLeft} s para escanear de nuevo`
+              : "Escanear sello"}
+          </Button>
           {showQRScanner && (
             <StampQRScanner
               isSameSlug={(s) => s === slug}
@@ -453,12 +362,10 @@ export default function WalletPage() {
           )}
         </Card>
 
-        {/* Premios activos */}
-        <Card>
+        <Card style={{ marginBottom: t.space.lg }}>
           <div style={{ fontSize: 15, fontWeight: t.font.weight.medium, marginBottom: t.space.sm }}>
             {cfg?.texts?.wallet?.rewards_title ?? "Premios activos"}
           </div>
-
           {loading ? (
             <p style={{ fontSize: 14, color: c.secondary }}>{cfg?.texts?.common?.loading ?? "Cargando…"}</p>
           ) : rewards.length === 0 ? (
@@ -495,6 +402,8 @@ export default function WalletPage() {
                     {theme.key === "barber" ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src="/themes/barber/scissors.png" alt="" width={28} height={28} style={{ objectFit: "contain" }} />
+                    ) : theme.key === "esthetic" ? (
+                      "💅"
                     ) : (
                       "🍺"
                     )}
@@ -509,10 +418,7 @@ export default function WalletPage() {
                     <div style={{ fontSize: 12, color: c.secondary, marginTop: 4 }}>
                       {cfg?.texts?.wallet?.rewards_expires_at ?? "Caduca:"} {formatDate(r.expires_at)}
                     </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: t.space.xs, marginTop: t.space.sm }}>
-                      <Button variant="secondary" onClick={() => redeemReward(r.id)} disabled={busy}>
-                        {cfg?.texts?.wallet?.redeem ?? "Canjear (staff)"}
-                      </Button>
+                    <div style={{ marginTop: t.space.sm }}>
                       <Button
                         variant="secondary"
                         onClick={() => setRedeemQRRewardId(r.id)}
@@ -526,7 +432,6 @@ export default function WalletPage() {
               ))}
             </ul>
           )}
-
           {redeemQRRewardId && (
             <StampQRScanner
               isSameSlug={(s) => s === slug}
@@ -537,9 +442,8 @@ export default function WalletPage() {
           )}
         </Card>
 
-        {/* Premios canjeados */}
         {rewardsRedeemed.length > 0 && (
-          <Card style={{ marginTop: t.space.lg }}>
+          <Card>
             <div style={{ fontSize: 15, fontWeight: t.font.weight.medium, marginBottom: t.space.sm }}>
               Premios canjeados
             </div>
@@ -582,10 +486,6 @@ export default function WalletPage() {
             </ul>
           </Card>
         )}
-
-        <p style={{ marginTop: t.space.lg, fontSize: 12, color: c.secondary, textAlign: "center" }}>
-          {cfg?.texts?.wallet?.tip ?? "Guarda esta página en tu pantalla de inicio para acceder como app."}
-        </p>
       </div>
     </main>
   );

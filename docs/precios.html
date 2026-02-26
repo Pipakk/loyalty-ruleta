@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planes y precios · Fidelización digital</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #faf8f5;
+      --text: #2c2825;
+      --text-soft: #5c554d;
+      --border: #e5e0d8;
+      --card: #fff;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(45, 42, 37, 0.06);
+      --green: #2d6a4f;
+      --blue: #1d4e6d;
+      --premium: #5c4033;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+    header { text-align: center; margin-bottom: 2.5rem; }
+    h1 {
+      font-family: "DM Serif Display", serif;
+      font-size: clamp(1.75rem, 4vw, 2.25rem);
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    .subtitle { color: var(--text-soft); font-size: 1rem; }
+
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .plans { grid-template-columns: 1fr; }
+    }
+
+    .plan {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+    }
+    .plan-badge {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: var(--blue);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.4rem 0.75rem;
+      border-radius: 0  var(--radius) 0 8px;
+      z-index: 1;
+    }
+    .plan-header {
+      padding: 1.5rem 1.5rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .plan-basico .plan-header { background: linear-gradient(180deg, rgba(45,106,79,0.06) 0%, transparent 100%); }
+    .plan-pro .plan-header { background: linear-gradient(180deg, rgba(29,78,109,0.06) 0%, transparent 100%); }
+    .plan-premium .plan-header { background: linear-gradient(180deg, rgba(92,64,51,0.08) 0%, transparent 100%); }
+
+    .plan-name {
+      font-family: "DM Serif Display", serif;
+      font-size: 1.25rem;
+      font-weight: 400;
+      margin-bottom: 0.35rem;
+    }
+    .plan-basico .plan-name { color: var(--green); }
+    .plan-pro .plan-name { color: var(--blue); }
+    .plan-premium .plan-name { color: var(--premium); }
+
+    .plan-price {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .plan-price span { font-size: 0.9rem; font-weight: 500; color: var(--text-soft); }
+
+    .plan-body { padding: 1.25rem 1.5rem; flex: 1; }
+    .plan-body ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .plan-body li {
+      padding: 0.5rem 0;
+      padding-left: 1.5rem;
+      position: relative;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .plan-body li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      font-weight: 700;
+    }
+    .plan-basico .plan-body li::before { color: var(--green); }
+    .plan-pro .plan-body li::before { color: var(--blue); }
+    .plan-premium .plan-body li::before { color: var(--premium); }
+
+    .plan-cta {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border-radius: 10px;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .plan-basico .btn { background: var(--green); color: #fff; }
+    .plan-pro .btn { background: var(--blue); color: #fff; }
+    .plan-premium .btn { background: var(--premium); color: #fff; }
+
+    .nav-sectors {
+      text-align: center;
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.9rem;
+      color: var(--text-soft);
+    }
+    .nav-sectors a {
+      color: var(--text);
+      text-decoration: underline;
+      margin: 0 0.5rem;
+    }
+    .nav-sectors a:hover { color: var(--blue); }
+    .btn-whatsapp {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background: #25d366;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border-radius: 10px;
+      transition: opacity 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-whatsapp:hover { opacity: 0.9; }
+    footer { margin-top: 2rem; text-align: center; font-size: 0.8rem; color: var(--text-soft); }
+    footer a { color: var(--text); text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Planes y precios</h1>
+      <p class="subtitle">Fidelización digital con sellos y QR · Sin app para el cliente</p>
+    </header>
+
+    <div class="plans">
+      <article class="plan plan-basico">
+        <div class="plan-header">
+          <div class="plan-name">Plan Básico</div>
+          <div class="plan-price">10€ <span>/mes</span></div>
+        </div>
+        <div class="plan-body">
+          <ul>
+            <li>Mantenimiento del servidor</li>
+            <li>Mantenimiento de la base de datos</li>
+            <li>Landing, sellos y premios (producto actual)</li>
+            <li>Sin soporte incluido</li>
+          </ul>
+        </div>
+        <div class="plan-cta">
+          <a href="https://wa.me/34639577915" class="btn btn-whatsapp" target="_blank" rel="noopener">Contratar Básico</a>
+        </div>
+      </article>
+
+      <article class="plan plan-pro">
+        <span class="plan-badge">Recomendado</span>
+        <div class="plan-header">
+          <div class="plan-name">Plan Profesional</div>
+          <div class="plan-price">25€ <span>/mes</span></div>
+        </div>
+        <div class="plan-body">
+          <ul>
+            <li>Mantenimiento del servidor</li>
+            <li>Mantenimiento de la base de datos</li>
+            <li>Landing, sellos y premios (producto actual)</li>
+            <li>Estadísticas mensuales para evaluar el impacto de la app en tu negocio</li>
+            <li>Soporte en menos de 48h</li>
+          </ul>
+        </div>
+        <div class="plan-cta">
+          <a href="https://wa.me/34639577915" class="btn btn-whatsapp" target="_blank" rel="noopener">Contratar Profesional</a>
+        </div>
+      </article>
+
+      <article class="plan plan-premium">
+        <div class="plan-header">
+          <div class="plan-name">Plan Premium</div>
+          <div class="plan-price">50€ <span>/mes</span></div>
+        </div>
+        <div class="plan-body">
+          <ul>
+            <li>Mantenimiento del servidor</li>
+            <li>Mantenimiento de la base de datos</li>
+            <li>Landing, sellos y premios (producto actual)</li>
+            <li>Estadísticas mensuales para evaluar el impacto de la app en tu negocio</li>
+            <li>Soporte en menos de 48h</li>
+            <li>Diseño de funcionalidades personalizadas a petición</li>
+            <li>Auditorías de ciberseguridad</li>
+            <li>Soporte prioritario</li>
+          </ul>
+        </div>
+        <div class="plan-cta">
+          <a href="https://wa.me/34639577915" class="btn btn-whatsapp" target="_blank" rel="noopener">Contratar Premium</a>
+        </div>
+      </article>
+    </div>
+
+    <nav class="nav-sectors">
+      <a href="index.html">Inicio</a> ·
+      ¿Para qué tipo de negocio? …
+      <a href="venta-barberias.html">Barberías</a>
+      <a href="venta-estetica-manicura.html">Estética y manicura</a>
+      <a href="venta-floristerias.html">Floristerías</a>
+    </nav>
+
+    <p style="text-align: center; margin-top: 2rem;">
+      <a href="https://wa.me/34639577915" class="btn-whatsapp" target="_blank" rel="noopener">Contacto (WhatsApp)</a>
+    </p>
+
+    <footer>
+      <a href="index.html">Inicio</a> · Precios indicativos · IVA no incluido si aplica
+    </footer>
+  </div>
+</body>
+</html>

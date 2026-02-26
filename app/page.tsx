@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/serverSupabase";
 import Link from "next/link";
 import { theme } from "@/lib/theme";
@@ -8,6 +9,10 @@ export default async function Home() {
     .from("bars")
     .select("id,slug,name,logo_url")
     .order("created_at", { ascending: true });
+
+  if (bars?.length === 1) {
+    redirect(`/b/${bars[0].slug}`);
+  }
 
   return (
     <main
