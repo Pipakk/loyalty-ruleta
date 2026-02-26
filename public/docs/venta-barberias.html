@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fidelización digital para barberías</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #faf8f5;
+      --text: #2c2825;
+      --text-soft: #5c554d;
+      --accent: #1a1a1a;
+      --accent-light: #3d3d3d;
+      --border: #e5e0d8;
+      --card: #fff;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(45, 42, 37, 0.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+    header { text-align: center; margin-bottom: 2.5rem; }
+    .kicker {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-soft);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: "DM Serif Display", serif;
+      font-size: clamp(1.85rem, 4vw, 2.5rem);
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 0.75rem;
+    }
+    .subtitle {
+      font-size: 1.05rem;
+      color: var(--text-soft);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .hero-benefits {
+      display: grid;
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    .benefit {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1.25rem;
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .benefit-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+    .benefit h3 { font-size: 1.05rem; margin-bottom: 0.25rem; color: var(--text); }
+    .benefit p { font-size: 0.9rem; color: var(--text-soft); }
+    .section-title {
+      font-family: "DM Serif Display", serif;
+      font-size: 1.4rem;
+      margin: 2.25rem 0 1rem;
+      color: var(--text);
+    }
+    .features-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .features-list li {
+      padding: 0.6rem 0;
+      padding-left: 1.75rem;
+      position: relative;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    .features-list li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .cta-block {
+      text-align: center;
+      margin-top: 2.5rem;
+      padding: 2rem;
+      background: linear-gradient(180deg, rgba(26,26,26,0.04) 0%, transparent 100%);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .cta-block p { margin-bottom: 1.25rem; color: var(--text-soft); font-size: 0.95rem; }
+    .btn {
+      display: inline-block;
+      padding: 0.9rem 1.75rem;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: 10px;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--accent-light); }
+    .link-precios { margin-top: 1rem; display: inline-block; color: var(--text-soft); font-size: 0.9rem; text-decoration: underline; }
+    .link-precios:hover { color: var(--text); }
+    .site-nav {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+      color: var(--text-soft);
+    }
+    .site-nav a { color: var(--text); text-decoration: underline; margin: 0 0.35rem; }
+    .site-nav a:hover { color: var(--accent); }
+    .btn-contact {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.85rem 1.5rem;
+      background: #25d366;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border-radius: 10px;
+      transition: opacity 0.2s;
+    }
+    .btn-contact:hover { opacity: 0.9; }
+    footer { margin-top: 2rem; text-align: center; font-size: 0.8rem; color: var(--text-soft); }
+    footer a { color: var(--text); text-decoration: underline; margin: 0 0.35rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="site-nav">
+      <a href="index.html">Inicio</a>
+      <a href="precios.html">Precios</a>
+      <a href="venta-estetica-manicura.html">Estética</a>
+      <a href="venta-floristerias.html">Floristerías</a>
+    </nav>
+    <header>
+      <p class="kicker">Para barberías y peluquerías</p>
+      <h1>Fideliza a tus clientes con sellos digitales</h1>
+      <p class="subtitle">
+        Sin app que instalar. Tu cliente escanea el QR en cada visita, acumula sellos y canjea premios. 
+        Ideal para cortes, arreglos de barba y tratamientos.
+      </p>
+    </header>
+
+    <div class="hero-benefits">
+      <div class="benefit">
+        <div class="benefit-icon">✂️</div>
+        <div>
+          <h3>Un sello por visita</h3>
+          <p>Cada vez que venga a la barbería, escanea el QR y suma un sello. Al completar la tarjeta, canjea su premio (corte gratis, producto, descuento…).</p>
+        </div>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">📱</div>
+        <div>
+          <h3>Sin app: solo el móvil</h3>
+          <p>No hace falta descargar nada. Entra con email, ve sus sellos y escanea en tienda. Puede añadir la página a la pantalla de inicio y usarla como app.</p>
+        </div>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">🎫</div>
+        <div>
+          <h3>Premios que tú eliges</h3>
+          <p>Configura el número de sellos y el premio (ej. 8 cortes = 1 gratis). El cliente escanea el QR del local para canjear cuando quiera usarlo.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Qué incluye</h2>
+    <ul class="features-list">
+      <li>Landing de entrada y creación de cuenta para tu barbería</li>
+      <li>Tarjeta de sellos visible (llevas X de Y) y botón para escanear sello</li>
+      <li>Premios activos y premios canjeados; canje por QR en el establecimiento</li>
+      <li>Mantenimiento del servidor y de la base de datos</li>
+      <li>Diseño adaptable a móvil y escritorio</li>
+    </ul>
+
+    <div class="cta-block">
+      <p>Elige el plan que mejor se adapte a tu barbería y empieza a fidelizar desde el primer día.</p>
+      <a href="precios.html" class="btn">Ver planes y precios</a>
+      <br />
+      <a href="precios.html" class="link-precios">Consulta precios desde 10€/mes</a>
+    </div>
+
+    <p style="text-align: center;">
+      <a href="https://wa.me/34639577915" class="btn-contact" target="_blank" rel="noopener">Contacto (WhatsApp)</a>
+    </p>
+
+    <footer>
+      <a href="index.html">Inicio</a> <a href="precios.html">Precios</a> · Fidelización digital · Barberías
+    </footer>
+  </div>
+</body>
+</html>

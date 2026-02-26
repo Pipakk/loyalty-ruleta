@@ -108,6 +108,12 @@ export default async function Home() {
             ))}
           </ul>
         )}
+
+        <p style={{ marginTop: theme.space.xl, fontSize: 13, color: theme.color.camelDark }}>
+          <Link href="/docs/" style={{ color: theme.color.textSoft, textDecoration: "underline" }}>
+            Planes y precios · Contratar fidelización
+          </Link>
+        </p>
       </div>
     </main>
   );
